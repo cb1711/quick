@@ -28,6 +28,7 @@
 #include <map>
 #include <tuple>
 #include <list>
+#include <boost/functional/hash.hpp>
 
 namespace quick {
 namespace detail_hash_impl {
@@ -53,16 +54,12 @@ struct hash_impl: public std::hash<T> {};
 // tweaked.
 template <typename Container>
 std::size_t OrderedSequenceHash(const Container& input) {
-  const int hash_size = sizeof(std::size_t);
-  std::string tmp;
-  tmp.resize(hash_size * input.size());
   auto hasher = hash_impl<typename Container::value_type>();
-  int pointer = 0;
+  size_t hash = hash_impl<size_t>()(input.size());
   for (auto& e : input) {
-    *(reinterpret_cast<std::size_t*>(&tmp[pointer])) = hasher(e);
-    pointer += hash_size;
+    boost::hash_combine(hash, hasher(e));
   }
-  return std::hash<std::string>()(tmp);
+  return hash;
 }
 
 template <typename MapContainer>
@@ -86,9 +83,10 @@ std::size_t OrderedMapHash(const MapContainer& input) {
 
 template <typename T1, typename T2>
 std::size_t PairHash(const std::pair<T1, T2>& p) {
-  std::vector<std::size_t> v = {hash_impl<T1>()(p.first),
-                                hash_impl<T2>()(p.second)};
-  return OrderedSequenceHash(v);
+  auto hash1 = hash_impl<T1>()(p.first);
+  auto hash2 = hash_impl<T2>()(p.second);
+  boost::hash_combine(hash1, hash2);
+  return hash1;
 }
 
 // Prereq to know/read:
