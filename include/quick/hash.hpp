@@ -64,19 +64,14 @@ std::size_t OrderedSequenceHash(const Container& input) {
 
 template <typename MapContainer>
 std::size_t OrderedMapHash(const MapContainer& input) {
-  const int hash_size = sizeof(std::size_t);
-  std::string tmp;
-  tmp.resize(hash_size * input.size() * 2);
   auto key_hasher = hash_impl<typename MapContainer::key_type>();
   auto value_hasher = hash_impl<typename MapContainer::mapped_type>();
-  int pointer = 0;
+  size_t hash = 0;
   for (auto& e : input) {
-    *(reinterpret_cast<std::size_t*>(&tmp[pointer])) = key_hasher(e.first);
-    pointer += hash_size;
-    *(reinterpret_cast<std::size_t*>(&tmp[pointer])) = value_hasher(e.second);
-    pointer += hash_size;
+    boost::hash_combine(hash, key_hasher(e.first));
+    boost::hash_combine(hash, key_hasher(e.second));
   }
-  return std::hash<std::string>()(tmp);
+  return hash;
 }
 
 
@@ -215,12 +210,11 @@ inline std::size_t HashFunction(const T& input) {
 
 template<typename T1, typename T2, typename... Ts>
 inline std::size_t HashFunction(const T1& i1, const T2& i2, const Ts&... is) {
-  std::vector<std::size_t> v = {quick::HashFunction(i1),
-                                quick::HashFunction(i2),
-                                quick::HashFunction(is)...};
-  return quick::HashFunction(v);
+  size_t hash = quick::HashFunction(i1);
+  boost::hash_combine(hash, quick::HashFunction(i2));
+  (void)std::initializer_list<int>{(boost::hash_combine(hash, quick::HashFunction(is)), 0)...};
+  return hash;
 }
-
 
 }  // namespace quick
 
