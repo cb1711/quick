@@ -69,7 +69,7 @@ std::size_t OrderedMapHash(const MapContainer& input) {
   size_t hash = 0;
   for (auto& e : input) {
     boost::hash_combine(hash, key_hasher(e.first));
-    boost::hash_combine(hash, key_hasher(e.second));
+    boost::hash_combine(hash, value_hasher(e.second));
   }
   return hash;
 }
